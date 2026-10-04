@@ -16,3 +16,11 @@ export {
   writeStereoPcm16Wav,
   type StereoPcm16WavInput
 } from "./render/wav16.js";
+
+export {
+  renderToneEvents,
+  renderToneEventsToWav,
+  type OscillatorWaveform,
+  type StereoFloatBuffer,
+  type ToneEvent
+} from "./synth/signal.js";
