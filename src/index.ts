@@ -46,3 +46,18 @@ export {
   type RenderedTrack,
   type TrackDefinition
 } from "./mix/buses.js";
+
+export {
+  digestCanonical as digestWaveForgeCanonical,
+  digestWaveForgeBundle,
+  renderWaveForgeBundle,
+  validateWaveForgeBundle,
+  waveForgeBundleToBusPlan,
+  type AudioArtifactEvidence,
+  type WaveForgePHIAudioBundleV0,
+  type WaveForgeRenderManifest,
+  type WaveForgeRenderOptions,
+  type WaveForgeRenderResult,
+  type WaveForgeStemEventV0,
+  type WaveForgeStemV0
+} from "./adapters/waveforge.js";
