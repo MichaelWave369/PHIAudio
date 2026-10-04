@@ -24,3 +24,12 @@ export {
   type StereoFloatBuffer,
   type ToneEvent
 } from "./synth/signal.js";
+
+export {
+  renderStems,
+  renderStemsToWav,
+  type RenderedStem,
+  type StemDefinition,
+  type StemMixResult,
+  type StemWavResult
+} from "./mix/stems.js";
