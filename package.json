@@ -1,0 +1,22 @@
+{
+  "name": "phiaudio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sovereign deterministic audio runtime for the Phi creative ecosystem",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test dist/test/smoke.test.js",
+    "check": "npm run typecheck && npm test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2"
+  },
+  "license": "MIT"
+}
