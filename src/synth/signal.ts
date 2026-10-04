@@ -164,7 +164,7 @@ function peakOf(left: readonly number[], right: readonly number[]): number {
   return peak;
 }
 
-export function renderToneEvents(
+export function renderToneEventsRaw(
   events: readonly ToneEvent[],
   sampleRate: number
 ): StereoFloatBuffer {
@@ -206,18 +206,32 @@ export function renderToneEvents(
     }
   });
 
+  return {
+    sampleRate,
+    left,
+    right,
+    peakBeforeLimit: peakOf(left, right),
+    limiterGain: 1
+  };
+}
+
+export function applyPeakLimiter(
+  input: StereoFloatBuffer
+): StereoFloatBuffer {
+  const left = [...input.left];
+  const right = [...input.right];
   const peakBeforeLimit = peakOf(left, right);
   const limiterGain = peakBeforeLimit > 1 ? 1 / peakBeforeLimit : 1;
 
   if (limiterGain !== 1) {
-    for (let index = 0; index < frameCount; index += 1) {
+    for (let index = 0; index < left.length; index += 1) {
       left[index] = (left[index] ?? 0) * limiterGain;
       right[index] = (right[index] ?? 0) * limiterGain;
     }
   }
 
   return {
-    sampleRate,
+    sampleRate: input.sampleRate,
     left,
     right,
     peakBeforeLimit,
@@ -225,10 +239,16 @@ export function renderToneEvents(
   };
 }
 
+export function renderToneEvents(
+  events: readonly ToneEvent[],
+  sampleRate: number
+): StereoFloatBuffer {
+  return applyPeakLimiter(renderToneEventsRaw(events, sampleRate));
+}
+
 export function renderToneEventsToWav(
   events: readonly ToneEvent[],
   sampleRate: number
 ): Buffer {
-  const rendered = renderToneEvents(events, sampleRate);
-  return encodeStereoPcm16Wav(rendered);
+  return encodeStereoPcm16Wav(renderToneEvents(events, sampleRate));
 }
