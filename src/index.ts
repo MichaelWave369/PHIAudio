@@ -22,6 +22,7 @@ export {
   renderToneEvents,
   renderToneEventsRaw,
   renderToneEventsToWav,
+  type AdsrEnvelope,
   type OscillatorWaveform,
   type StereoFloatBuffer,
   type ToneEvent
