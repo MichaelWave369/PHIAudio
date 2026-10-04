@@ -2,6 +2,13 @@ import { encodeStereoPcm16Wav } from "../render/wav16.js";
 
 export type OscillatorWaveform = "sine" | "square" | "triangle";
 
+export interface AdsrEnvelope {
+  attackSeconds: number;
+  decaySeconds: number;
+  sustainLevel: number;
+  releaseSeconds: number;
+}
+
 export interface ToneEvent {
   startSeconds: number;
   durationSeconds: number;
@@ -9,6 +16,7 @@ export interface ToneEvent {
   amplitude: number;
   pan?: number;
   waveform?: OscillatorWaveform;
+  envelope?: AdsrEnvelope;
 }
 
 export interface StereoFloatBuffer {
@@ -22,6 +30,38 @@ export interface StereoFloatBuffer {
 function assertFinite(name: string, value: number): void {
   if (!Number.isFinite(value)) {
     throw new TypeError(`${name} must be finite`);
+  }
+}
+
+function validateEnvelope(
+  envelope: AdsrEnvelope,
+  durationSeconds: number,
+  index: number
+): void {
+  const prefix = `events[${index}].envelope`;
+  for (const [name, value] of Object.entries(envelope)) {
+    assertFinite(`${prefix}.${name}`, value);
+  }
+
+  if (
+    envelope.attackSeconds < 0 ||
+    envelope.decaySeconds < 0 ||
+    envelope.releaseSeconds < 0
+  ) {
+    throw new RangeError(`${prefix} times must be >= 0`);
+  }
+
+  if (envelope.sustainLevel < 0 || envelope.sustainLevel > 1) {
+    throw new RangeError(`${prefix}.sustainLevel must be between 0 and 1`);
+  }
+
+  if (
+    envelope.attackSeconds +
+      envelope.decaySeconds +
+      envelope.releaseSeconds >
+    durationSeconds
+  ) {
+    throw new RangeError(`${prefix} stages exceed event duration`);
   }
 }
 
@@ -49,6 +89,10 @@ function validateEvent(event: ToneEvent, index: number): void {
   if (pan < -1 || pan > 1) {
     throw new RangeError(`events[${index}].pan must be between -1 and 1`);
   }
+
+  if (event.envelope) {
+    validateEnvelope(event.envelope, event.durationSeconds, index);
+  }
 }
 
 function oscillator(waveform: OscillatorWaveform, phaseCycles: number): number {
@@ -70,6 +114,42 @@ function panGains(pan: number): { left: number; right: number } {
     left: Math.cos(angle),
     right: Math.sin(angle)
   };
+}
+
+function envelopeGain(
+  envelope: AdsrEnvelope | undefined,
+  elapsedSeconds: number,
+  durationSeconds: number
+): number {
+  if (!envelope) {
+    return 1;
+  }
+
+  const {
+    attackSeconds,
+    decaySeconds,
+    sustainLevel,
+    releaseSeconds
+  } = envelope;
+
+  if (attackSeconds > 0 && elapsedSeconds < attackSeconds) {
+    return elapsedSeconds / attackSeconds;
+  }
+
+  const decayStart = attackSeconds;
+  const decayEnd = decayStart + decaySeconds;
+  if (decaySeconds > 0 && elapsedSeconds < decayEnd) {
+    const progress = (elapsedSeconds - decayStart) / decaySeconds;
+    return 1 + (sustainLevel - 1) * progress;
+  }
+
+  const releaseStart = durationSeconds - releaseSeconds;
+  if (releaseSeconds > 0 && elapsedSeconds >= releaseStart) {
+    const progress = (elapsedSeconds - releaseStart) / releaseSeconds;
+    return sustainLevel * Math.max(0, 1 - progress);
+  }
+
+  return sustainLevel;
 }
 
 function peakOf(left: readonly number[], right: readonly number[]): number {
@@ -114,8 +194,12 @@ export function renderToneEvents(
 
     for (let frame = startFrame; frame < endFrame; frame += 1) {
       const localFrame = frame - startFrame;
+      const elapsedSeconds = localFrame / sampleRate;
       const phaseCycles = (localFrame * event.frequencyHz) / sampleRate;
-      const sample = oscillator(waveform, phaseCycles) * event.amplitude;
+      const shapedAmplitude =
+        event.amplitude *
+        envelopeGain(event.envelope, elapsedSeconds, event.durationSeconds);
+      const sample = oscillator(waveform, phaseCycles) * shapedAmplitude;
 
       left[frame] = (left[frame] ?? 0) + sample * gains.left;
       right[frame] = (right[frame] ?? 0) + sample * gains.right;
