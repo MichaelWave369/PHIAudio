@@ -1,6 +1,7 @@
 import { encodeStereoPcm16Wav } from "../render/wav16.js";
 import {
-  renderToneEvents,
+  applyPeakLimiter,
+  renderToneEventsRaw,
   type StereoFloatBuffer,
   type ToneEvent
 } from "../synth/signal.js";
@@ -70,7 +71,7 @@ export function renderStems(
   const rendered: RenderedStem[] = definitions.map((stem) => {
     const gainDb = stem.gainDb ?? 0;
     const gain = dbToGain(gainDb);
-    const source = renderToneEvents(stem.events, sampleRate);
+    const source = renderToneEventsRaw(stem.events, sampleRate);
 
     return {
       name: stem.name,
@@ -99,26 +100,18 @@ export function renderStems(
     }
   }
 
-  const peakBeforeLimit = peakOf(left, right);
-  const limiterGain = peakBeforeLimit > 1 ? 1 / peakBeforeLimit : 1;
-
-  if (limiterGain !== 1) {
-    for (let index = 0; index < frameCount; index += 1) {
-      left[index] = (left[index] ?? 0) * limiterGain;
-      right[index] = (right[index] ?? 0) * limiterGain;
-    }
-  }
+  const master = applyPeakLimiter({
+    sampleRate,
+    left,
+    right,
+    peakBeforeLimit: peakOf(left, right),
+    limiterGain: 1
+  });
 
   return {
     sampleRate,
     stems: rendered,
-    master: {
-      sampleRate,
-      left,
-      right,
-      peakBeforeLimit,
-      limiterGain
-    }
+    master
   };
 }
 
