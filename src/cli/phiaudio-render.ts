@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { isAbsolute, join, normalize, sep } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import {
   digestWaveForgeBundle,
@@ -378,6 +379,6 @@ async function main(): Promise<void> {
   }
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   await main();
 }
