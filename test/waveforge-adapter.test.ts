@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import test from "node:test";
 
 import {
-  digestCanonical,
+  digestWaveForgeCanonical,
   renderWaveForgeBundle,
   validateWaveForgeBundle,
   waveForgeBundleToBusPlan,
@@ -78,7 +78,7 @@ function fixture(): WaveForgePHIAudioBundleV0 {
     ...body,
     receipt: {
       schema: "waveforge.phiaudio_bridge_receipt.v0",
-      bundle_hash: digestCanonical(body),
+      bundle_hash: digestWaveForgeCanonical(body),
       source_packet_hash: body.source_packet_hash,
       created_at: "1979-03-06T03:06:09Z"
     }
