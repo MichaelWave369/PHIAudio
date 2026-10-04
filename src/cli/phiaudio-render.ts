@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 
 import {
   digestWaveForgeBundle,
-  digestWaveForgeCanonical,
+  digestCanonical,
   renderWaveForgeBundle,
   type WaveForgePHIAudioBundleV0,
   type WaveForgeRenderResult
@@ -255,7 +255,7 @@ export async function renderWaveForgeBundleFile(input: {
   });
 
   rendered.manifest.sourceBundleHash = originalBundleHash;
-  rendered.manifestDigest = digestWaveForgeCanonical(rendered.manifest);
+  rendered.manifestDigest = digestCanonical(rendered.manifest);
 
   const outputDir = safeRelativeOutput(input.outputDir);
   const root = join(input.cwd ?? process.cwd(), outputDir);
@@ -307,7 +307,7 @@ export async function renderWaveForgeBundleFile(input: {
     JSON.stringify(
       {
         ...receipt,
-        receiptDigest: digestWaveForgeCanonical(receipt)
+        receiptDigest: digestCanonical(receipt)
       },
       null,
       2
