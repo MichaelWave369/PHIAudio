@@ -9,3 +9,10 @@ export {
 } from "./contracts.js";
 
 export { createReceipt, digestPlan } from "./receipt.js";
+
+export {
+  encodeStereoPcm16Wav,
+  floatToPcm16,
+  writeStereoPcm16Wav,
+  type StereoPcm16WavInput
+} from "./render/wav16.js";
