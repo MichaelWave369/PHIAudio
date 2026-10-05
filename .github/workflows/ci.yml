@@ -21,7 +21,12 @@ jobs:
           node-version: 22
 
       - name: Install
-        run: npm install
+        run: npm ci
+
+      - name: Verify dependency lock is stable
+        run: |
+          npm install --package-lock-only --ignore-scripts
+          git diff --exit-code -- package-lock.json
 
       - name: Typecheck
         run: npm run typecheck
